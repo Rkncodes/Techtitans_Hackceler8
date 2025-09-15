@@ -1,310 +1,218 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
+
+// Initial state
+const initialState = {
+  user: null,
+  isAuthenticated: false,
+  loading: true,
+  error: null
+};
+
+// Actions
+const authActions = {
+  SET_LOADING: 'SET_LOADING',
+  LOGIN_SUCCESS: 'LOGIN_SUCCESS',
+  LOGOUT: 'LOGOUT',
+  SET_ERROR: 'SET_ERROR',
+  CLEAR_ERROR: 'CLEAR_ERROR',
+  UPDATE_USER: 'UPDATE_USER'
+};
+
+// Reducer
+function authReducer(state, action) {
+  switch (action.type) {
+    case authActions.SET_LOADING:
+      return { ...state, loading: action.payload };
+    
+    case authActions.LOGIN_SUCCESS:
+      return {
+        ...state,
+        user: action.payload,
+        isAuthenticated: true,
+        loading: false,
+        error: null
+      };
+    
+    case authActions.LOGOUT:
+      return {
+        ...state,
+        user: null,
+        isAuthenticated: false,
+        loading: false,
+        error: null
+      };
+    
+    case authActions.SET_ERROR:
+      return {
+        ...state,
+        error: action.payload,
+        loading: false
+      };
+    
+    case authActions.CLEAR_ERROR:
+      return {
+        ...state,
+        error: null
+      };
+    
+    case authActions.UPDATE_USER:
+      return {
+        ...state,
+        user: { ...state.user, ...action.payload }
+      };
+    
+    default:
+      return state;
+  }
+}
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(null);
+  const [state, dispatch] = useReducer(authReducer, initialState);
 
-  const API_URL = 'http://localhost:5000/api';
-
+  // Check if user is logged in on app start
   useEffect(() => {
-    // Check if user is already logged in
-    const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('token');
-    
-    if (savedUser && savedToken) {
-      try {
-        setUser(JSON.parse(savedUser));
-        setToken(savedToken);
-        // Optionally verify token with backend
-        verifyToken(savedToken);
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
-    }
-    
-    setLoading(false);
+    checkAuthStatus();
   }, []);
 
-  // Verify token with backend
-  const verifyToken = async (token) => {
+  const checkAuthStatus = async () => {
     try {
-      const response = await fetch(`${API_URL}/auth/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('userData');
       
-      if (data.success) {
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
+      if (token && userData) {
+        const user = JSON.parse(userData);
+        dispatch({
+          type: authActions.LOGIN_SUCCESS,
+          payload: user
+        });
       } else {
-        // Token is invalid, clear storage
-        logout();
+        dispatch({ type: authActions.SET_LOADING, payload: false });
       }
     } catch (error) {
-      console.error('Token verification failed:', error);
-      // Don't logout on network error, keep using saved data
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('userData');
+      dispatch({ type: authActions.SET_LOADING, payload: false });
     }
   };
 
-  const login = async (email, password) => {
-    try {
-      setLoading(true);
-      
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setUser(data.user);
-        setToken(data.token);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setLoading(false);
-        return { success: true };
-      } else {
-        setLoading(false);
-        return { success: false, message: data.message };
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      setLoading(false);
-      
-      // Fallback to demo accounts if backend is not running
-      if (error.message.includes('fetch')) {
-        return handleDemoLogin(email, password);
-      }
-      
-      return { 
-        success: false, 
-        message: 'Connection failed. Make sure backend is running!' 
-      };
-    }
-  };
-
-  // Fallback demo login when backend is not available
-  const handleDemoLogin = async (email, password) => {
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Check demo accounts
-      if (password !== 'demo123') {
-        throw new Error('Invalid credentials. Use password: demo123');
-      }
-
-      let mockUser = {
-        id: 'demo-' + Date.now(),
-        email: email,
-        greenCredits: 580
-      };
-
-      // Set user data based on email
-      if (email === 'student@srm.edu.in') {
-        mockUser = { ...mockUser, name: 'John Doe', role: 'student', hostel: 'A-Block' };
-      } else if (email === 'mess@srm.edu.in') {
-        mockUser = { ...mockUser, name: 'Mess Manager', role: 'mess_staff', hostel: 'A-Block' };
-      } else if (email === 'ngo@green.org') {
-        mockUser = { ...mockUser, name: 'Green NGO', role: 'ngo', hostel: 'External' };
-      } else {
-        mockUser = { ...mockUser, name: email.split('@')[0], role: 'student', hostel: 'A-Block' };
-      }
-      
-      setUser(mockUser);
-      setToken('demo-token-123');
-      localStorage.setItem('token', 'demo-token-123');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        message: error.message || 'Login failed' 
-      };
-    }
-  };
-
+  // Register function
   const register = async (userData) => {
     try {
-      setLoading(true);
-      
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
+      dispatch({ type: authActions.SET_LOADING, payload: true });
+      dispatch({ type: authActions.CLEAR_ERROR });
 
-      const data = await response.json();
+      // For now, we'll simulate the registration since backend might not be ready
+      console.log('Registration data:', userData);
+
+      // Simulate API call
+      const response = await simulateAPICall('/api/auth/register', userData);
       
-      if (data.success) {
-        setUser(data.user);
-        setToken(data.token);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setLoading(false);
+      if (response.success) {
+        const { user, token } = response.data;
+        
+        // Store in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('userData', JSON.stringify(user));
+        
+        dispatch({
+          type: authActions.LOGIN_SUCCESS,
+          payload: user
+        });
+        
         return { success: true };
       } else {
-        setLoading(false);
-        return { success: false, message: data.message };
+        dispatch({
+          type: authActions.SET_ERROR,
+          payload: response.message
+        });
+        return { success: false, message: response.message };
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      setLoading(false);
-      
-      // Fallback to demo registration if backend is not running
-      if (error.message.includes('fetch')) {
-        return handleDemoRegistration(userData);
-      }
-      
-      return { 
-        success: false, 
-        message: 'Connection failed. Make sure backend is running!' 
-      };
-    }
-  };
-
-  // Fallback demo registration when backend is not available
-  const handleDemoRegistration = async (userData) => {
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockUser = {
-        id: 'demo-' + Date.now(),
-        name: userData.name,
-        email: userData.email,
-        role: userData.role || 'student',
-        hostel: userData.hostel,
-        greenCredits: 50 // Welcome bonus
-      };
-      
-      setUser(mockUser);
-      setToken('demo-token-123');
-      localStorage.setItem('token', 'demo-token-123');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        message: error.message || 'Registration failed' 
-      };
-    }
-  };
-
-  // API helper function
-  const apiCall = async (endpoint, options = {}) => {
-    try {
-      const response = await fetch(`${API_URL}${endpoint}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-          ...options.headers,
-        },
-        ...options,
+      console.error('Registration failed:', error);
+      dispatch({
+        type: authActions.SET_ERROR,
+        payload: 'Registration failed. Please try again.'
       });
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('API call failed:', error);
-      throw error;
+      return { success: false, message: 'Registration failed. Please try again.' };
     }
   };
 
-  // Fetch user profile
-  const fetchUserProfile = async () => {
+  // Login function
+  const login = async (email, password) => {
     try {
-      const data = await apiCall('/auth/me');
-      if (data.success) {
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        return data.user;
-      }
-      return null;
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-      return null;
-    }
-  };
+      dispatch({ type: authActions.SET_LOADING, payload: true });
+      dispatch({ type: authActions.CLEAR_ERROR });
 
-  // Update user profile
-  const updateUserProfile = async (updates) => {
-    try {
-      const data = await apiCall('/auth/update', {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      });
-
-      if (data.success) {
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
+      // Simulate API call
+      const response = await simulateAPICall('/api/auth/login', { email, password });
+      
+      if (response.success) {
+        const { user, token } = response.data;
+        
+        // Store in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('userData', JSON.stringify(user));
+        
+        dispatch({
+          type: authActions.LOGIN_SUCCESS,
+          payload: user
+        });
+        
         return { success: true };
+      } else {
+        dispatch({
+          type: authActions.SET_ERROR,
+          payload: response.message
+        });
+        return { success: false, message: response.message };
       }
-      
-      return { success: false, message: data.message };
     } catch (error) {
-      console.error('Failed to update profile:', error);
-      // Fallback to local update if backend is not available
-      updateUser(updates);
-      return { success: true };
+      console.error('Login failed:', error);
+      dispatch({
+        type: authActions.SET_ERROR,
+        payload: 'Login failed. Please try again.'
+      });
+      return { success: false, message: 'Login failed. Please try again.' };
     }
   };
 
+  // Logout function
   const logout = () => {
-    setUser(null);
-    setToken(null);
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('userData');
+    dispatch({ type: authActions.LOGOUT });
+    toast.success('Logged out successfully!');
   };
 
-  const updateUser = (updatedUser) => {
-    const newUser = { ...user, ...updatedUser };
-    setUser(newUser);
-    localStorage.setItem('user', JSON.stringify(newUser));
-  };
-
-  // Check if backend is available
-  const checkBackendStatus = async () => {
+  // Update user function
+  const updateUser = (updatedData) => {
     try {
-      const response = await fetch(`${API_URL}/test`);
-      return response.ok;
+      const updatedUser = { ...state.user, ...updatedData };
+      localStorage.setItem('userData', JSON.stringify(updatedUser));
+      dispatch({
+        type: authActions.UPDATE_USER,
+        payload: updatedData
+      });
+      return { success: true };
     } catch (error) {
-      return false;
+      console.error('Failed to update user:', error);
+      return { success: false, message: 'Failed to update user data' };
     }
   };
 
   const value = {
-    user,
-    token,
-    loading,
-    login,
+    user: state.user,
+    isAuthenticated: state.isAuthenticated,
+    loading: state.loading,
+    error: state.error,
     register,
+    login,
     logout,
-    updateUser,
-    updateUserProfile,
-    fetchUserProfile,
-    apiCall,
-    checkBackendStatus,
-    isAuthenticated: !!user,
-    isDemo: token?.startsWith('demo-')
+    updateUser
   };
 
   return (
@@ -313,6 +221,145 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+// Simulate API call function (replace with real API calls when backend is ready)
+const simulateAPICall = async (endpoint, data) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      if (endpoint === '/api/auth/register') {
+        // Simulate successful registration
+        const user = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          role: data.role,
+          greenCredits: 0,
+          createdAt: new Date().toISOString(),
+          
+          // Role-specific data
+          ...(data.role === 'student' && {
+            srmId: data.srmId,
+            hostelName: data.hostelName,
+            roomNumber: data.roomNumber,
+            department: data.department,
+            year: data.year
+          }),
+          
+          ...(data.role === 'mess_staff' && {
+            staffId: data.staffId,
+            workingHostel: data.workingHostel,
+            designation: data.designation,
+            shift: data.shift
+          }),
+          
+          ...(data.role === 'ngo' && {
+            ngoName: data.ngoName,
+            ngoRegistrationNumber: data.ngoRegistrationNumber,
+            contactPersonName: data.contactPersonName,
+            ngoType: data.ngoType,
+            serviceAreas: data.serviceAreas,
+            ngoAddress: data.ngoAddress
+          })
+        };
+        
+        resolve({
+          success: true,
+          data: {
+            user,
+            token: 'mock_jwt_token_' + Math.random().toString(36).substr(2, 9)
+          }
+        });
+      } else if (endpoint === '/api/auth/login') {
+        // Check demo credentials
+        const demoUsers = [
+          {
+            email: 'student@srm.edu.in',
+            password: 'demo123',
+            user: {
+              id: 'student_1',
+              name: 'Akshara Kumari',
+              email: 'student@srm.edu.in',
+              phone: '+91 9876543210',
+              role: 'student',
+              srmId: 'RA2111003010123',
+              hostelName: 'A-Block',
+              roomNumber: '205',
+              department: 'Computer Science',
+              year: '2nd Year',
+              greenCredits: 580,
+              createdAt: new Date().toISOString()
+            }
+          },
+          {
+            email: 'mess@srm.edu.in',
+            password: 'demo123',
+            user: {
+              id: 'staff_1',
+              name: 'Ramesh Kumar',
+              email: 'mess@srm.edu.in',
+              phone: '+91 9876543211',
+              role: 'mess_staff',
+              staffId: 'STAFF001234',
+              workingHostel: 'A-Block',
+              designation: 'Mess Manager',
+              shift: 'Full Day',
+              greenCredits: 0,
+              createdAt: new Date().toISOString()
+            }
+          },
+          {
+            email: 'ngo@green.org',
+            password: 'demo123',
+            user: {
+              id: 'ngo_1',
+              name: 'Priya Sharma',
+              email: 'ngo@green.org',
+              phone: '+91 9876543212',
+              role: 'ngo',
+              ngoName: 'Green Earth Foundation',
+              ngoRegistrationNumber: 'NGO/2023/001234',
+              contactPersonName: 'Priya Sharma',
+              ngoType: 'Food Distribution',
+              serviceAreas: 'Chennai',
+              greenCredits: 0,
+              createdAt: new Date().toISOString()
+            }
+          }
+        ];
+        
+        const validUser = demoUsers.find(u => u.email === data.email && u.password === data.password);
+        
+        if (validUser) {
+          resolve({
+            success: true,
+            data: {
+              user: validUser.user,
+              token: 'mock_jwt_token_' + Math.random().toString(36).substr(2, 9)
+            }
+          });
+        } else {
+          resolve({
+            success: false,
+            message: 'Invalid email or password'
+          });
+        }
+      }
+    }, 1500); // Simulate network delay
+  });
+};
+
+// Hook to use auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export default AuthContext;
+
 
 
 
