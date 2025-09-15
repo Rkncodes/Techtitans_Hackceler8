@@ -12,8 +12,7 @@ import {
   Flame,
   Target,
   Gift,
-  Calendar,
-  Check
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -24,17 +23,17 @@ const Leaderboard = () => {
 
   const leaderboardData = {
     weekly: [
-      { id: 1, name: 'Priya Sharma', hostel: 'Shenbagam Girls Mess', credits: 450, rank: 1, avatar: 'PS', wasteReduced: 3.2, badges: ['🏆', '🌟', '🔥'] },
-      { id: 2, name: 'Rahul Kumar', hostel: 'Sannasi Boys Mess', credits: 420, rank: 2, avatar: 'RK', wasteReduced: 2.8, badges: ['🥈', '⚡'] },
-      { id: 3, name: 'Sneha Reddy', hostel: 'Meenakshi Girls Mess', credits: 380, rank: 3, avatar: 'SR', wasteReduced: 2.5, badges: ['🥉', '🌱'] },
-      { id: 4, name: 'Amit Patel', hostel: 'JMESS Boys', credits: 350, rank: 4, avatar: 'AP', wasteReduced: 2.2, badges: ['⭐'] },
-      { id: 5, name: 'Karthik Raj', hostel: 'DMESS Boys', credits: 320, rank: 5, avatar: 'KR', wasteReduced: 2.0, badges: ['🌿'] },
-      { id: 6, name: 'Anita Singh', hostel: 'Kopperundevi M-Block Girls Mess', credits: 300, rank: 6, avatar: 'AS', wasteReduced: 1.9, badges: ['💚'] },
-      { id: 7, name: 'Vikram Gupta', hostel: 'Sannasi Boys Mess', credits: 280, rank: 7, avatar: 'VG', wasteReduced: 1.7, badges: ['🎯'] },
-      { id: 8, name: 'Deepika Nair', hostel: 'Shenbagam Girls Mess', credits: 260, rank: 8, avatar: 'DN', wasteReduced: 1.5, badges: ['✨'] },
-      { id: 9, name: 'Suresh Menon', hostel: 'JMESS Boys', credits: 240, rank: 9, avatar: 'SM', wasteReduced: 1.4, badges: ['🌟'] },
-      { id: 10, name: 'Ravi Sharma', hostel: 'DMESS Boys', credits: 220, rank: 10, avatar: 'RS', wasteReduced: 1.2, badges: ['🏅'] },
-      { id: 12, name: user?.name || 'You', hostel: user?.hostel || 'Shenbagam Girls Mess', credits: 580, rank: 12, avatar: user?.name?.charAt(0) || 'Y', wasteReduced: 2.1, badges: ['🌱', '⚡'], isCurrentUser: true }
+      { id: 1, name: 'Priya Sharma', hostel: 'A-Block', credits: 450, rank: 1, avatar: 'PS', streak: 7, wasteReduced: 3.2, badges: ['🏆', '🌟', '🔥'] },
+      { id: 2, name: 'Rahul Kumar', hostel: 'B-Block', credits: 420, rank: 2, avatar: 'RK', streak: 5, wasteReduced: 2.8, badges: ['🥈', '⚡'] },
+      { id: 3, name: 'Sneha Reddy', hostel: 'C-Block', credits: 380, rank: 3, avatar: 'SR', streak: 6, wasteReduced: 2.5, badges: ['🥉', '🌱'] },
+      { id: 4, name: 'Amit Patel', hostel: 'A-Block', credits: 350, rank: 4, avatar: 'AP', streak: 4, wasteReduced: 2.2, badges: ['⭐'] },
+      { id: 5, name: 'Karthik Raj', hostel: 'D-Block', credits: 320, rank: 5, avatar: 'KR', streak: 3, wasteReduced: 2.0, badges: ['🌿'] },
+      { id: 6, name: 'Anita Singh', hostel: 'B-Block', credits: 300, rank: 6, avatar: 'AS', streak: 4, wasteReduced: 1.9, badges: ['💚'] },
+      { id: 7, name: 'Vikram Gupta', hostel: 'C-Block', credits: 280, rank: 7, avatar: 'VG', streak: 2, wasteReduced: 1.7, badges: ['🎯'] },
+      { id: 8, name: 'Deepika Nair', hostel: 'A-Block', credits: 260, rank: 8, avatar: 'DN', streak: 3, wasteReduced: 1.5, badges: ['✨'] },
+      { id: 9, name: 'Suresh Menon', hostel: 'D-Block', credits: 240, rank: 9, avatar: 'SM', streak: 2, wasteReduced: 1.4, badges: ['🌟'] },
+      { id: 10, name: 'Ravi Sharma', hostel: 'B-Block', credits: 220, rank: 10, avatar: 'RS', streak: 1, wasteReduced: 1.2, badges: ['🏅'] },
+      { id: 12, name: user?.name || 'You', hostel: user?.hostel || 'A-Block', credits: 580, rank: 12, avatar: user?.name?.charAt(0) || 'Y', streak: 4, wasteReduced: 2.1, badges: ['🌱', '⚡'], isCurrentUser: true }
     ]
   };
 
@@ -110,7 +109,7 @@ const Leaderboard = () => {
       case 3:
         return <Award className="w-6 h-6 text-yellow-600" />;
       default:
-        return <span className="w-6 h-6 flex items-center justify-center text-gray-600 font-bold">•</span>;
+        return <span className="w-6 h-6 flex items-center justify-center text-gray-600 font-bold">#{rank}</span>;
     }
   };
 
@@ -159,10 +158,20 @@ const Leaderboard = () => {
             Your Performance
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-yellow-300 mb-1">Weekly</div>
-              <div className="text-primary-200 font-semibold">Category</div>
+              <div className="text-3xl font-bold text-yellow-300 mb-1">#{currentData.find(u => u.isCurrentUser)?.rank || 12}</div>
+              <div className="text-primary-200 font-semibold">Current Rank</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-3xl font-bold text-yellow-300 mb-1">{user?.greenCredits || 580}</div>
+              <div className="text-primary-200 font-semibold">Green Credits</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-3xl font-bold text-yellow-300 mb-1">4</div>
+              <div className="text-primary-200 font-semibold">Day Streak</div>
             </div>
             
             <div className="text-center">
@@ -330,6 +339,10 @@ const Leaderboard = () => {
                     </h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
                       <span>{participant.hostel}</span>
+                      <div className="flex items-center">
+                        <Flame className="w-4 h-4 mr-1 text-orange-500" />
+                        <span>{participant.streak} day streak</span>
+                      </div>
                     </div>
                   </div>
                 </div>
