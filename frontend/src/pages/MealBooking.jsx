@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Utensils, 
@@ -10,19 +10,21 @@ import {
   MapPin,
   Star,
   QrCode,
-  Plus,
   ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
+import api from '../services/api';
 
 const MealBooking = () => {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [bookedMeals, setBookedMeals] = useState(['lunch']);
+  const [bookedMeals, setBookedMeals] = useState([]);
   const [showQRCode, setShowQRCode] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState(null);
+  const [loading, setLoading] = useState(false);
 
+  // Meals data - you may later fetch this from backend if dynamic
   const meals = [
     {
       id: 'breakfast',
@@ -62,13 +64,91 @@ const MealBooking = () => {
     }
   ];
 
-  const handleBookMeal = (mealId) => {
+  // Fetch bookings for the selected date on mount or date change
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchBookings = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/bookings', {
+          params: { userId: user.id, date: selectedDate }
+        });
+        if (response.data.success) {
+          setBookedMeals(response.data.bookings.map(b => b.meal.id)); // assuming populated meal object
+        } else {
+          setBookedMeals([]);
+        }
+      } catch (error) {
+        toast.error('Failed to fetch your bookings');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, [selectedDate, user]);
+
+  // Helper to check if user can book (booking for tomorrow or later, before cut-off)
+  const canBookForDate = (dateStr) => {
+    const selected = new Date(dateStr);
+    const today = new Date();
+    selected.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+
+    // Booking must be for tomorrow or later
+    if (selected <= today) return false;
+
+    // One night cut-off logic: current time must be before 11 PM to book for next day
+    if (selected.getTime() === today.getTime() + 24 * 60 * 60 * 1000) {
+      const now = new Date();
+      if (now.getHours() >= 23) return false;
+    }
+    return true;
+  };
+
+  const handleBookMeal = async (mealId) => {
+    if (!user) {
+      toast.error('You must be logged in to book meals');
+      return;
+    }
+
+    if (!canBookForDate(selectedDate)) {
+      toast.error('Booking for tomorrow must be done before 11 PM today');
+      return;
+    }
+
     if (bookedMeals.includes(mealId)) {
-      setBookedMeals(bookedMeals.filter(id => id !== mealId));
-      toast.success('Meal booking cancelled');
+      // Cancel booking
+      try {
+        setLoading(true);
+        const response = await api.delete('/bookings/cancel', { data: { userId: user.id, mealId, date: selectedDate } });
+        if (response.data.success) {
+          setBookedMeals(bookedMeals.filter(id => id !== mealId));
+          toast.success('Meal booking cancelled');
+        } else {
+          toast.error(response.data.message || 'Cancellation failed');
+        }
+      } catch (err) {
+        toast.error('Error cancelling booking');
+      } finally {
+        setLoading(false);
+      }
     } else {
-      setBookedMeals([...bookedMeals, mealId]);
-      toast.success('Meal booked successfully');
+      // Add booking
+      try {
+        setLoading(true);
+        const response = await api.post('/bookings', { userId: user.id, mealId, date: selectedDate });
+        if (response.data.success) {
+          setBookedMeals([...bookedMeals, mealId]);
+          toast.success('Meal booked successfully');
+        } else {
+          toast.error(response.data.message || 'Booking failed');
+        }
+      } catch (err) {
+        toast.error('Error booking meal');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -112,6 +192,7 @@ const MealBooking = () => {
           const isBooked = bookedMeals.includes(meal.id);
           const occupancyPercentage = Math.round((meal.booked / meal.capacity) * 100);
           const isAlmostFull = occupancyPercentage > 80;
+          const disabled = !canBookForDate(selectedDate);
 
           return (
             <div
@@ -193,10 +274,11 @@ const MealBooking = () => {
                 <button
                   onClick={() => handleBookMeal(meal.id)}
                   className={`w-full py-3 px-5 rounded-lg font-semibold transition-colors ${
-                    isBooked ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                    disabled ? 'bg-gray-300 cursor-not-allowed' : isBooked ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-emerald-700 hover:bg-emerald-800 text-white'
                   }`}
+                  disabled={loading || disabled}
                 >
-                  {isBooked ? 'Cancel Booking' : 'Book Meal'}
+                  {isBooked ? 'Cancel Booking' : disabled ? 'Booking Closed' : 'Book Meal'}
                 </button>
 
                 {isBooked && (
@@ -254,7 +336,7 @@ const MealBooking = () => {
                 <QrCode className="w-5 h-5 mr-2 text-emerald-700" />
                 QR Code — {selectedMeal.name}
               </h3>
-              
+
               <div className="bg-gray-100 rounded-xl p-6 mb-4 text-center">
                 <div className="w-40 h-40 bg-white rounded-md mx-auto mb-3 flex items-center justify-center border border-gray-200">
                   <div className="text-4xl">📱</div>
@@ -268,7 +350,7 @@ const MealBooking = () => {
                 <strong>Time:</strong> {selectedMeal.time}<br/>
                 <strong>Location:</strong> {selectedMeal.location}
               </div>
-              
+
               <button
                 onClick={() => setShowQRCode(false)}
                 className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded-lg font-medium w-full"
@@ -284,4 +366,5 @@ const MealBooking = () => {
 };
 
 export default MealBooking;
+
 

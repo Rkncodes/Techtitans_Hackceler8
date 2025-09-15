@@ -37,7 +37,6 @@ const SurplusTracker = () => {
       expiryTime: '4 hours',
       status: 'available',
       photos: ['https://images.unsplash.com/photo-1512058564366-18510be2db19?w=300'],
-      estimatedValue: 780,
       quality: 'excellent'
     },
     {
@@ -52,7 +51,6 @@ const SurplusTracker = () => {
       status: 'claimed',
       claimedBy: 'Green Earth NGO',
       photos: ['https://images.unsplash.com/photo-1574484284002-952d92456975?w=300'],
-      estimatedValue: 570,
       quality: 'good'
     },
     {
@@ -67,7 +65,6 @@ const SurplusTracker = () => {
       status: 'collected',
       claimedBy: 'Hope Foundation',
       photos: ['https://images.unsplash.com/photo-1555939594-58e637e7aa7e?w=300'],
-      estimatedValue: 315,
       quality: 'fair'
     }
   ]);
@@ -121,7 +118,6 @@ const SurplusTracker = () => {
         loggedAt: 'Just now',
         status: 'available',
         photos: ['https://images.unsplash.com/photo-1512058564366-18510be2db19?w=300'],
-        estimatedValue: parseFloat(formData.quantity) * 150,
         quality: 'good'
       };
       
@@ -208,11 +204,6 @@ const SurplusTracker = () => {
           <div className="flex items-center justify-between">
             <span className="text-gray-600 font-medium">Quantity:</span>
             <span className="font-bold text-gray-900">{item.quantity}kg</span>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600 font-medium">Estimated Value:</span>
-            <span className="font-bold text-primary-600">₹{item.estimatedValue}</span>
           </div>
           
           <div className="flex items-center justify-between">
@@ -330,7 +321,6 @@ const SurplusTracker = () => {
               e.preventDefault();
               handleLogSurplus(logForm);
             }} className="space-y-6">
-              
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Meal Type
@@ -484,8 +474,8 @@ const SurplusTracker = () => {
         </div>
         
         <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-6 border border-primary-200">
-          <div className="text-3xl font-bold text-primary-700 mb-1">₹4,850</div>
-          <div className="text-primary-600 font-semibold">Value Saved</div>
+          <div className="text-3xl font-bold text-primary-700 mb-1">Value Saved</div>
+          <div className="text-primary-600 font-semibold">Free Provided</div>
         </div>
         
         <div className="bg-gradient-to-br from-accent-50 to-accent-100 rounded-2xl p-6 border border-accent-200">
@@ -587,3 +577,4 @@ const SurplusTracker = () => {
 };
 
 export default SurplusTracker;
+

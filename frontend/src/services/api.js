@@ -36,5 +36,23 @@ api.interceptors.response.use(
   }
 );
 
+// New API calls for bookings
+
+// Fetch bookings for a user on a date
+api.getBookings = ({ userId, date }) => {
+  return api.get('/bookings', { params: { userId, date } });
+};
+
+// Create a booking
+api.createBooking = ({ userId, mealId, date }) => {
+  return api.post('/bookings', { userId, mealId, date });
+};
+
+// Cancel a booking
+api.cancelBooking = ({ userId, mealId, date }) => {
+  return api.delete('/bookings/cancel', { data: { userId, mealId, date } });
+};
+
 export default api;
+
 
