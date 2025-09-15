@@ -1,18 +1,29 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
-import { Eye, EyeOff, Leaf, Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Leaf } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 
 const Login = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -26,7 +37,7 @@ const Login = () => {
       const result = await login(formData.email, formData.password);
       
       if (result.success) {
-        toast.success('Welcome back! 🌱');
+        toast.success('Welcome back! 🎉');
       } else {
         toast.error(result.message || 'Login failed');
       }
@@ -45,180 +56,150 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       
-      {/* Background Decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-emerald-200 to-teal-200 rounded-full opacity-20 animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-teal-200 to-green-200 rounded-full opacity-20 animate-float" style={{animationDelay: '1s'}}></div>
-      </div>
-
-      <div className="max-w-md w-full relative z-10">
-        
-        {/* Header */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="flex flex-col items-center"
         >
-          <div className="flex justify-center mb-6">
-            <motion.div 
-              whileHover={{ scale: 1.1, rotate: 360 }}
-              transition={{ duration: 0.5 }}
-              className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl shadow-xl animate-pulse-green"
+          {/* SRM Logo */}
+          <div className="flex items-center space-x-3 mb-6">
+            <img 
+              src="/srm-logo.png" 
+              alt="SRM Institute" 
+              className="w-12 h-12 object-contain"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div 
+              className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl hidden items-center justify-center shadow-md"
+              style={{display: 'none'}}
             >
-              <Leaf className="w-12 h-12 text-white" />
-            </motion.div>
+              <Leaf className="w-6 h-6 text-white" />
+            </div>
+            
+            <div className="text-left">
+              <h1 className="text-xl font-bold text-gray-900 font-heading">Smart Food Management</h1>
+              <p className="text-sm text-gray-600">SRM Institute of Science & Technology</p>
+            </div>
           </div>
           
-          <h1 className="text-4xl font-bold text-gray-800 mb-3">
-            Welcome Back
-          </h1>
-          <p className="text-gray-600 text-lg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 mr-2 text-emerald-500" />
-            Sign in to your Smart Food Management account
+          <h2 className="text-2xl font-bold text-gray-900 font-heading">
+            Sign in to your account
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+              Register here
+            </Link>
           </p>
         </motion.div>
+      </div>
 
-        {/* Login Form */}
-        <motion.form
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          onSubmit={handleSubmit}
-          className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-2 border-white/50"
+          className="bg-white py-8 px-4 shadow-sm sm:rounded-xl sm:px-10 border border-gray-200"
         >
-          
-          {/* Email Field */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-emerald-500" />
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full pl-12 pr-4 py-4 bg-gray-50/80 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-gray-800 placeholder-gray-500"
-                placeholder="Enter your email"
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                Email address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="Enter your email"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Password Field */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-emerald-500" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="w-full pl-12 pr-12 py-4 bg-gray-50/80 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-gray-800 placeholder-gray-500"
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-emerald-500 transition-colors"
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    Sign in
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </>
+                )}
+              </motion.button>
             </div>
-          </div>
-
-          {/* Remember Me & Forgot Password */}
-          <div className="flex items-center justify-between mb-8">
-            <label className="flex items-center">
-              <input type="checkbox" className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4" />
-              <span className="ml-2 text-sm text-gray-600">Remember me</span>
-            </label>
-            <Link to="/forgot-password" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-              Forgot password?
-            </Link>
-          </div>
-
-          {/* Login Button */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-4 px-6 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-xl hover:shadow-2xl flex items-center justify-center text-lg disabled:opacity-70"
-          >
-            {loading ? (
-              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5 mr-2" />
-                Sign In
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </>
-            )}
-          </motion.button>
+          </form>
 
           {/* Demo Accounts */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-8 p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border-2 border-emerald-200"
-          >
-            <p className="text-sm text-gray-700 font-semibold mb-4 text-center flex items-center justify-center">
-              <Sparkles className="w-4 h-4 mr-2 text-emerald-500" />
-              Demo Accounts:
-            </p>
-            <div className="space-y-3 text-sm text-gray-600">
-              <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg">
-                <span className="flex items-center">
-                  <span className="text-lg mr-2">👨‍🎓</span>
-                  Student:
-                </span>
-                <code className="bg-white px-2 py-1 rounded text-xs text-emerald-700">student@srm.edu.in</code>
+          <div className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
               </div>
-              <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg">
-                <span className="flex items-center">
-                  <span className="text-lg mr-2">🍳</span>
-                  Mess Staff:
-                </span>
-                <code className="bg-white px-2 py-1 rounded text-xs text-emerald-700">mess@srm.edu.in</code>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-white/70 rounded-lg">
-                <span className="flex items-center">
-                  <span className="text-lg mr-2">🏢</span>
-                  NGO:
-                </span>
-                <code className="bg-white px-2 py-1 rounded text-xs text-emerald-700">ngo@green.org</code>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-emerald-600 mt-3 font-semibold">
-                  🔑 Password for all: <code className="bg-white px-2 py-1 rounded">demo123</code>
-                </p>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500 font-medium">Demo Accounts</span>
               </div>
             </div>
-          </motion.div>
-        </motion.form>
 
-        {/* Register Link */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-center mt-6"
-        >
-          <p className="text-gray-600">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-emerald-600 hover:text-emerald-700 font-semibold">
-              Sign up for free
-            </Link>
-          </p>
+            <div className="mt-4 grid grid-cols-1 gap-3">
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm">
+                  <div className="font-semibold text-gray-900 mb-1">Password: demo123</div>
+                  <div className="space-y-1 text-gray-600">
+                    <div>📚 student@srm.edu.in</div>
+                    <div>👨‍🍳 mess@srm.edu.in</div>
+                    <div>🏢 ngo@green.org</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>
@@ -226,4 +207,5 @@ const Login = () => {
 };
 
 export default Login;
+
 
