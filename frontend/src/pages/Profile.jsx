@@ -29,12 +29,16 @@ const Profile = () => {
   });
 
   const stats = [
+    { label: 'Green Credits', value: 580, icon: Leaf, color: 'text-green-600', bg: 'bg-green-100' },
     { label: 'Meals Booked', value: 42, icon: Target, color: 'text-blue-600', bg: 'bg-blue-100' },
-    { label: 'Waste Reduced', value: '15.8kg', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-100' }
+    { label: 'Waste Reduced', value: '15.8kg', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-100' },
+    { label: 'Campus Rank', value: '#12', icon: Award, color: 'text-amber-600', bg: 'bg-amber-100' }
   ];
 
   const achievements = [
     { title: 'Eco Warrior', description: 'Saved 10kg+ food waste', emoji: '🛡️', unlocked: true },
+    { title: 'Streak Master', description: '7-day booking streak', emoji: '🔥', unlocked: true },
+    { title: 'Green Champion', description: '500+ green credits', emoji: '🏆', unlocked: true },
     { title: 'Food Saver', description: 'Attend 50 meals', emoji: '🍽️', unlocked: false }
   ];
 
