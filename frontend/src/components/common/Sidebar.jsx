@@ -1,188 +1,162 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Utensils, 
-  Package,
+  Home,
+  Utensils,
+  BarChart3,
   Trophy,
   User,
-  BarChart3,
-  Settings,
-  HelpCircle,
-  Leaf,
-  Calendar,
+  Package,
+  Truck,
   Users,
-  Sparkles,
-  Target,
-  Award,
-  TrendingUp
+  Settings,
+  LogOut,
+  Calendar,
+  Leaf,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const Sidebar = () => {
-  const { user } = useAuth();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
-  const menuItems = [
-    {
-      name: 'Dashboard',
-      path: '/dashboard',
-      icon: LayoutDashboard,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-100',
-      gradient: 'from-emerald-500 to-teal-600'
-    },
-    {
-      name: 'Book Meals',
-      path: '/book-meals',
-      icon: Utensils,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-      gradient: 'from-blue-500 to-cyan-600'
-    },
-    {
-      name: 'Surplus Tracker',
-      path: '/surplus',
-      icon: Package,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-100',
-      gradient: 'from-amber-500 to-orange-600'
-    },
-    {
-      name: 'Leaderboard',
-      path: '/leaderboard',
-      icon: Trophy,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-      gradient: 'from-purple-500 to-violet-600'
-    },
-    {
-      name: 'Profile',
-      path: '/profile',
-      icon: User,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-100',
-      gradient: 'from-gray-500 to-slate-600'
-    }
-  ];
+  const getNavigationItems = () => {
+    const baseItems = [
+      { path: '/dashboard', icon: Home, label: 'Dashboard', roles: ['student', 'mess_staff', 'ngo'] },
+      { path: '/profile', icon: User, label: 'My Profile', roles: ['student', 'mess_staff', 'ngo'] }
+    ];
+
+    const roleSpecificItems = {
+      student: [
+        { path: '/book-meals', icon: Utensils, label: 'Book Meals' },
+        { path: '/schedule', icon: Calendar, label: 'Meal Schedule' },
+        { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
+      ],
+      mess_staff: [
+        { path: '/inventory', icon: Package, label: 'Inventory' },
+        { path: '/reports', icon: BarChart3, label: 'Reports' },
+        { path: '/surplus', icon: Leaf, label: 'Surplus Food' },
+      ],
+      ngo: [
+        { path: '/collections', icon: Truck, label: 'Food Collection' },
+        { path: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
+        { path: '/impact', icon: BarChart3, label: 'Impact Report' },
+      ]
+    };
+
+    const items = [
+      ...baseItems.filter(item => item.roles.includes(user?.role)),
+      ...(roleSpecificItems[user?.role] || [])
+    ];
+
+    items.push({ path: '/settings', icon: Settings, label: 'Settings' });
+    
+    return items;
+  };
+
+  const navigationItems = getNavigationItems();
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
-    <motion.aside
-      initial={{ x: -260 }}
-      animate={{ x: 0 }}
-      className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 backdrop-blur-md border-r-2 border-emerald-200 shadow-2xl z-40 overflow-y-auto"
-    >
-      <div className="p-6">
+    <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 shadow-sm z-30 overflow-y-auto">
+      <div className="p-4">
         
         {/* User Info Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl p-6 mb-8 border border-emerald-100 shadow"
-        >
-          <div className="flex items-center space-x-4">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl"
-            >
-              {user?.name?.charAt(0) || 'U'}
-            </motion.div>
-            <div>
-              <h3 className="font-bold text-gray-800 text-lg">
-                {user?.name || 'User'}
-              </h3>
-              <p className="text-emerald-700 text-sm font-medium capitalize">
-                {user?.role || 'Student'}
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm mr-3">
+              <span className="text-white font-bold text-lg">
+                {user?.name?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-gray-900 text-sm truncate">{user?.name}</h3>
+              <p className="text-blue-600 text-xs font-medium capitalize">
+                {user?.role?.replace('_', ' ')}
               </p>
-              <p className="text-gray-600 text-sm">{user?.hostel}</p>
+              <div className="flex items-center mt-1">
+                <Building2 className="w-3 h-3 text-gray-400 mr-1" />
+                <span className="text-xs text-gray-500">
+                  {user?.hostelName || user?.workingHostel || user?.ngoName || 'SRM Campus'}
+                </span>
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Navigation Menu */}
-        <nav className="space-y-2">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
+        <nav className="space-y-1">
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">
+            Navigation
+          </div>
+          
+          {navigationItems.map((item) => {
             const isActive = location.pathname === item.path;
-            
             return (
-              <motion.div
+              <Link
                 key={item.path}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
+                to={item.path}
+                className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                }`}
               >
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden ${
-                      isActive
-                        ? `bg-gradient-to-r ${item.gradient} text-white shadow-xl`
-                        : 'text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md'
-                    }`
-                  }
-                >
-                  <div className={`p-2 rounded-lg transition-all duration-200 ${
-                    isActive ? 'bg-white/20' : `${item.bgColor} group-hover:scale-110`
-                  }`}>
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : item.color}`} />
-                  </div>
-                  <span className="font-semibold">{item.name}</span>
-                  
-                  {/* Active Indicator */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute right-3 w-2 h-2 bg-white rounded-full"
-                    />
-                  )}
-
-                  {/* Hover Effect */}
+                <item.icon className={`w-5 h-5 mr-3 ${
+                  isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'
+                }`} />
+                <span>{item.label}</span>
+                
+                {isActive && (
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12"
-                    initial={{ x: '-100%' }}
-                    whileHover={{ x: '100%' }}
-                    transition={{ duration: 0.6 }}
+                    layoutId="activeIndicator"
+                    className="absolute left-0 w-1 h-8 bg-blue-300 rounded-r-full"
                   />
-                </NavLink>
-              </motion.div>
+                )}
+              </Link>
             );
           })}
         </nav>
 
-        {/* Bottom Menu */}
-        <div className="mt-8 pt-6 border-t-2 border-emerald-200">
-          <nav className="space-y-2">
-            {[
-              { name: 'Settings', path: '/settings', icon: Settings },
-              { name: 'Help & Support', path: '/help', icon: HelpCircle }
-            ].map((item, index) => {
-              const Icon = item.icon;
-              
-              return (
-                <motion.div
-                  key={item.path}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                >
-                  <NavLink
-                    to={item.path}
-                    className="flex items-center space-x-3 px-4 py-2 rounded-lg transition-all duration-200 text-gray-500 hover:bg-emerald-50 hover:text-emerald-700"
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="font-medium text-sm">{item.name}</span>
-                  </NavLink>
-                </motion.div>
-              );
-            })}
-          </nav>
+        {/* Green Credits Display */}
+        <div className="mt-6 p-4 bg-green-50 rounded-xl border border-green-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                <Leaf className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-green-900">Green Credits</p>
+                <p className="text-xs text-green-600">Environmental Impact</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold text-green-800">{user?.greenCredits || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <div className="mt-6">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+          >
+            <LogOut className="w-5 h-5 mr-3" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
-    </motion.aside>
+    </div>
   );
 };
 
 export default Sidebar;
+
+
 
